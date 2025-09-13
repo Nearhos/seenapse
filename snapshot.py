@@ -10,7 +10,7 @@ def main(image_path: str, model_name: str = DEFAULT_MODEL) -> str:
     Returns the model's answer as a string.
     Raises exceptions on errors instead of exiting the process.
     """
-    api_key = "AIzaSyAFSfJmOxz9gvXLHh5CIi2VrcIFLqoBarU"
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set")
 

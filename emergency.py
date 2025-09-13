@@ -3,8 +3,8 @@ from twilio.rest import Client
 
 def send_sms(location_message):
     # Find Account SID and Auth Token at twilio.com/console
-    account_sid = "ACdc98fda075d039d46598b4c54462b5f3"  # Twilio Account SID
-    auth_token = "ca0ab5df258db91e2ea2b1b8ab7ba6a5"  # Twilio Auth Token
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID") # Twilio Account SID
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN") # Twilio Auth Token
     client = Client(account_sid, auth_token)
 
 
