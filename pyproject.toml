@@ -5,8 +5,13 @@ description = "Real-time object detection system using Meta Ray-Ban AI Glasses a
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "google-generativeai>=0.8.5",
     "mss>=10.0.0",
     "numpy>=2.1.1",
     "opencv-python>=4.11.0.86",
+    "pillow>=11.1.0",
     "ultralytics>=8.3.78",
+    "python-dotenv>=1.0.0",
+    "twilio>=8.0.0",
+    "elevenlabs>=2.15.0",
 ]

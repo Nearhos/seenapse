@@ -2,12 +2,13 @@ import cv2
 import numpy as np
 from mss import mss
 from datetime import datetime
-import google.generativeai as genai
 from PIL import Image
 import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
+import cohere
 
 # Load environment variables
 load_dotenv()
@@ -17,13 +18,12 @@ from text_to_speech import speak_text
 
 # Configuration constants (inline since no config file)
 SCREEN_CAPTURE = {"top": 140, "left": 25, "width": 400, "height": 600}
-GEMINI_MODEL = "gemini-1.5-flash"
 
-# Configure Gemini API from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
-genai.configure(api_key=GEMINI_API_KEY)
+# Configure Cohere API from environment variable
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+if not COHERE_API_KEY:
+    raise ValueError("COHERE_API_KEY not found in environment variables")
+co = cohere.ClientV2(api_key=COHERE_API_KEY)
 
 def capture_screenshot():
     """Capture a screenshot of the specific screen area and save it as an image file"""
@@ -48,67 +48,71 @@ def capture_screenshot():
     return filename
 
 def analyze_image_enhanced(image_path):
-    """Enhanced image analysis using optimized prompt from partner's code"""
-    
-    # Initialize the model using config
-    model = genai.GenerativeModel(GEMINI_MODEL)
-    
-    # Open and prepare the image
-    image = Image.open(image_path)
-    
-    # Enhanced prompt from partner's snapshot.py (more focused and effective)
-    prompt = """
-        You are a compact multimodal assistant used in a real-time Snapshot tool.
+    """Enhanced image analysis using Cohere's vision model and optimized prompt."""
+    import base64
+    # Open and encode the image as base64 data URI
+    with open(image_path, "rb") as img_file:
+        image_bytes = img_file.read()
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        data_uri = f"data:image/jpeg;base64,{image_base64}"
 
-        Select ONE best task:
+    prompt = (
+        "You are a compact multimodal assistant used in a real-time Snapshot tool.\n\n"
+        "Select ONE best task:\n\n"
+        "1) Math: solve and return only the final answer. If there are multiple parts, list each on its own line as (a), (b), ...\n"
+        "2) Translation: detect language and return the full English translation only. No extra commentary.\n"
+        "3) Image understanding: explain what the image shows and clarify likely confusing elements. "
+        "If the image contains text or equations, transcribe the relevant parts and, if applicable, solve or translate them.\n\n"
+        "Rules:\n"
+        "- Be concise (ideally ≤ 3 sentences unless multiple sub-answers are required).\n"
+        "- No preamble, no markdown, no apologies, no chain-of-thought.\n"
+        "- Preserve technical symbols, numbers, and proper nouns.\n"
+        "- For math: include units; avoid unnecessary rounding; if assumptions are required, state them in one short sentence at the end.\n"
+        "- For translation: output the translated text only.\n"
+        "- For image: prioritize what the user likely cares about (main subjects, relationships, actions, anomalies, UI labels). Include one brief clarification note only if ambiguity would mislead.\n\n"
+        "Output format:\n"
+        "- Math → just the final answer (and label parts if needed).\n"
+        "- Translation → just the English translation.\n"
+        "- Image → 1–3 concise sentences (add a single 'Note: ...' line only if essential)."
+    )
 
-        1) Math: solve and return only the final answer. If there are multiple parts, list each on its own line as (a), (b), ...
-        2) Translation: detect language and return the full English translation only. No extra commentary.
-        3) Image understanding: explain what the image shows and clarify likely confusing elements. 
-        If the image contains text or equations, transcribe the relevant parts and, if applicable, solve or translate them.
-
-        Rules:
-        - Be concise (ideally ≤ 3 sentences unless multiple sub-answers are required).
-        - No preamble, no markdown, no apologies, no chain-of-thought.
-        - Preserve technical symbols, numbers, and proper nouns.
-        - For math: include units; avoid unnecessary rounding; if assumptions are required, state them in one short sentence at the end.
-        - For translation: output the translated text only.
-        - For image: prioritize what the user likely cares about (main subjects, relationships, actions, anomalies, UI labels). Include one brief clarification note only if ambiguity would mislead.
-
-        Output format:
-        - Math → just the final answer (and label parts if needed).
-        - Translation → just the English translation.
-        - Image → 1–3 concise sentences (add a single "Note: ..." line only if essential).
-        """
-    
-    response = model.generate_content([prompt, image])
-    return response.text.strip()
+    resp = co.chat(
+        model="command-a-vision-07-2025",
+        temperature=0.3,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_uri}},
+            ],
+        }],
+    )
+    return resp.message.content[0].text.strip()
 
 def snapshot_workflow():
     """Complete snapshot workflow: capture + analyze + speak"""
-    
     print("🔍 Starting snapshot workflow...")
-    
+
     # Step 1: Capture screenshot from your specific screen area
     image_path = capture_screenshot()
-    
-    # Step 2: Analyze with enhanced Gemini prompt
-    print("🤖 Analyzing with enhanced Gemini...")
-    
+
+    # Step 2: Analyze with enhanced Cohere vision prompt
+    print("🤖 Analyzing with Cohere vision model...")
+
     try:
         analysis = analyze_image_enhanced(image_path)
         print(f"\n✅ Analysis:")
         print("-" * 50)
         print(analysis)
         print("-" * 50)
-        
+
         # Step 3: Speak the results
         print("🔊 Converting to speech...")
         speak_text(analysis)
-        
+
         print("✅ Snapshot workflow complete!")
         return analysis
-        
+
     except Exception as e:
         error_msg = f"❌ Error in snapshot workflow: {e}"
         print(error_msg)

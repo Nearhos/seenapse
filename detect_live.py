@@ -9,7 +9,7 @@ model = YOLO("yolov8n.pt")
 
 # Set up screen capture
 sct = mss()
-monitor = {"top": 0, "left": 2780, "width": 320, "height": 320}  # Adjust as needed
+monitor = {"top": 140, "left": 25, "width": 400, "height": 600}  # Facebook livestream coordinates
 
 # Frame skipping: process every nth frame for detection
 frame_skip = 2  # Adjust this (1 = no skipping, 2 = every 2nd frame, etc.)

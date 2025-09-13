@@ -1,7 +1,11 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 from text_to_speech import speak_text
-from twilio.rest import Client  # Now enabled for testing
+from twilio.rest import Client
+
+# Load environment variables
+load_dotenv()
 
 def send_message_workflow(message_text=None):
     """Send a quick message to a specific contact"""
@@ -15,28 +19,30 @@ def send_message_workflow(message_text=None):
     # Speak what we're doing
     speak_text(f"Sending message: {message_text}")
     
-    # Set Twilio credentials directly for testing
-    account_sid = "ACdc98fda075d039d46598b4c54462b5f3"
-    auth_token = "ca0ab5df258db91e2ea2b1b8ab7ba6a5"
+    # Get credentials from environment variables
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_number = os.getenv("TWILIO_PHONE_NUMBER")
+    target_contact = os.getenv("EMERGENCY_CONTACT")
     
-    if account_sid and auth_token:
-        client = Client(account_sid, auth_token)
-        from_number = "+14159807815"  # Your Twilio number
-        target_contact = "+16478668110"  # Your frequent contact
-        
-        try:
-            message = client.messages.create(
-                body=message_text,
-                from_=from_number,
-                to=target_contact
-            )
-            print(f"✅ Message sent to {target_contact}")
-            speak_text("Message sent successfully")
-        except Exception as e:
-            print(f"❌ Failed to send message: {e}")
-            speak_text("Message sending failed")
-    else:
-        print("❌ Twilio credentials not configured")
+    if not all([account_sid, auth_token, from_number, target_contact]):
+        print("❌ Twilio credentials not configured in environment variables")
+        speak_text("Message sending failed - credentials not configured")
+        return None
+    
+    client = Client(account_sid, auth_token)
+    
+    try:
+        message = client.messages.create(
+            body=message_text,
+            from_=from_number,
+            to=target_contact
+        )
+        print(f"✅ Message sent to {target_contact}")
+        speak_text("Message sent successfully")
+    except Exception as e:
+        print(f"❌ Failed to send message: {e}")
+        speak_text("Message sending failed")
     
     
     # Log message for now

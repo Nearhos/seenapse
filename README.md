@@ -1,226 +1,194 @@
-# String Classification API
+# Real-Time AI Assistant with Meta Ray-Ban Glasses and YOLOv8 Nano
 
-A FastAPI-based service that classifies input strings into four categories: emergency, translation, question, and general.
+This project enables real-time object detection on a livestream from Meta Ray-Ban AI Glasses using YOLOv8 Nano on a Mac M1. The glasses stream video to Instagram, which is then captured and processed on the Mac to identify objects in the user's field of view. Originally intended to assist with Arduino projects by identifying components, the current focus is on the vision system, with potential for future expansion.
 
-## Features
-
-- **Emergency Detection**: Identifies urgent or emergency-related content
-- **Translation Requests**: Detects translation needs and foreign language content
-- **Question Classification**: Recognizes questions and queries
-- **General Text**: Default category for other content
-
-## Installation
-
-1. Clone this repository
-2. Install dependencies:
+## Clone the Repository
 
 ```bash
-pip install -r requirements.txt
+# Clone with HTTPS
+git clone https://github.com/ghsaboias/glasses-ai.git
+
+# Or clone with SSH
+git clone git@github.com:ghsaboias/glasses-ai.git
+
+cd glasses-ai
 ```
 
-3. Run the application:
+## Table of Contents
 
-```bash
-python app.py
-```
+- [Project Overview](#project-overview)
+- [Requirements](#requirements)
+- [Setup Instructions](#setup-instructions)
+- [Usage](#usage)
+- [Technical Details](#technical-details)
+- [Troubleshooting](#troubleshooting)
+- [Future Improvements](#future-improvements)
 
-The API will be available at `http://localhost:8000`
+## Project Overview
 
-## API Endpoints
+The goal of this project is to create a real-time AI assistant that processes the livestream from Meta Ray-Ban AI Glasses to help identify objects or components (e.g., Arduino parts) in the user's environment. The glasses livestream to Instagram, and the video feed is captured and analyzed on a Mac M1 using YOLOv8 Nano for object detection. This setup leverages the glasses' camera and the Mac's processing power to provide real-time visual feedback.
 
-### POST `/classify`
+## Requirements
 
-Classifies a string into one of four categories.
+### Hardware
 
-**Request Body:**
+- Meta Ray-Ban AI Glasses
+- Mac M1 with 8GB RAM (or similar)
+- Dual monitors (optional, but instructions include dual-monitor configuration)
 
-```json
-{
-  "text": "Your input string here"
-}
-```
+### Software
 
-**Response:**
-
-```json
-{
-  "input_text": "Your input string here",
-  "classification": "emergency|translation|question|general",
-  "confidence": 0.85,
-  "reasoning": "Explanation of why this classification was chosen"
-}
-```
-
-### GET `/`
-
-Returns basic API information and available endpoints.
-
-### GET `/health`
-
-Health check endpoint.
-
-### GET `/docs`
-
-Interactive API documentation (Swagger UI).
-
-## Example Usage
-
-### Using curl
-
-```bash
-# Emergency detection
-curl -X POST "http://localhost:8000/classify" \
-     -H "Content-Type: application/json" \
-     -d '{"text": "Help! There is a fire emergency!"}'
-
-# Translation request
-curl -X POST "http://localhost:8000/classify" \
-     -H "Content-Type: application/json" \
-     -d '{"text": "How do you say hello in Spanish?"}'
-
-# Question
-curl -X POST "http://localhost:8000/classify" \
-     -H "Content-Type: application/json" \
-     -d '{"text": "What is the weather like today?"}'
-
-# General text
-curl -X POST "http://localhost:8000/classify" \
-     -H "Content-Type: application/json" \
-     -d '{"text": "I had a great day at the park."}'
-```
-
-### Using Python requests
-
-```python
-import requests
-
-url = "http://localhost:8000/classify"
-
-# Test different types of strings
-test_strings = [
-    "Emergency! Call 911 immediately!",
-    "Translate this to French please",
-    "What time is it?",
-    "The weather is nice today"
+- Python 3.8+
+- uv (Python package manager)
+dependencies = [
+    "mss>=10.0.0",
+    "numpy>=2.1.1",
+    "opencv-python>=4.11.0.86",
+    "ultralytics>=8.3.78",
+    "google-generativeai>=0.8.5",
+    "pillow>=11.1.0",
 ]
 
-for text in test_strings:
-    response = requests.post(url, json={"text": text})
-    result = response.json()
-    print(f"Text: {text}")
-    print(f"Classification: {result['classification']}")
-    print(f"Confidence: {result['confidence']}")
-    print(f"Reasoning: {result['reasoning']}")
-    print("-" * 50)
-```
+## Setup Instructions
 
-### Using JavaScript/fetch
+### 1. Set Up the Environment
 
-```javascript
-async function classifyText(text) {
-  const response = await fetch("http://localhost:8000/classify", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ text: text }),
-  });
-
-  const result = await response.json();
-  console.log(result);
-}
-
-// Example usage
-classifyText("Help! Medical emergency!");
-```
-
-## Classification Categories
-
-### Emergency
-
-Detects text containing:
-
-- Emergency keywords: emergency, urgent, help, fire, police, ambulance, etc.
-- Crisis indicators: danger, critical, severe, injury
-- Emergency numbers: 911, SOS
-
-**Example texts:**
-
-- "Emergency! Call 911!"
-- "Urgent help needed - fire!"
-- "Medical emergency in progress"
-
-### Translation
-
-Detects text containing:
-
-- Translation requests: "translate", "what does X mean", "how do you say"
-- Language indicators: español, français, deutsch, etc.
-- Non-English characters (significant amount)
-
-**Example texts:**
-
-- "Translate this to Spanish"
-- "What does 'bonjour' mean in English?"
-- "こんにちは" (Japanese text)
-
-### Question
-
-Detects text containing:
-
-- Question words: what, how, when, where, why, who, which
-- Question patterns: can, could, would, should, is, are, do, does
-- Ending with question mark
-
-**Example texts:**
-
-- "What is the weather like?"
-- "How do I get to the airport?"
-- "Can you help me?"
-
-### General
-
-Default category for text that doesn't match the above patterns.
-
-**Example texts:**
-
-- "I love programming"
-- "The movie was great"
-- "Today is a beautiful day"
-
-## Configuration
-
-The classification logic uses keyword matching and pattern recognition. You can modify the keywords and patterns in the `classify_string()` function in `app.py` to customize the classification behavior.
-
-## Development
-
-To run in development mode with auto-reload:
+Make sure you have Python 3.8+ and uv installed, then:
 
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+# Clone and enter the repository
+git clone https://github.com/ghsaboias/glasses-ai.git
+cd glasses-ai
+
+# Create and activate virtual environment
+uv venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
 ```
 
-## Testing
+### 2. Configure the Livestream
 
-You can test the API using the interactive documentation at `http://localhost:8000/docs` after starting the server.
+1. Pair your Meta Ray-Ban AI Glasses with the Meta View app on your phone
+2. Set up a private Instagram account for streaming
+3. Start the livestream from the glasses using the voice command: "Hey Meta, start livestream"
 
-## Response Format
+### 3. Access the Livestream on Your Mac
 
-All classification responses include:
+1. Open a browser (e.g., Chrome, Safari) and log into the private Instagram account
+2. Ensure the livestream video is visible. If using Brave, you may need to disable Shields or switch browsers if video fails to display
 
-- `input_text`: The original input string
-- `classification`: One of four categories (emergency, translation, question, general)
-- `confidence`: A score between 0 and 1 indicating classification confidence
-- `reasoning`: Human-readable explanation of why this classification was chosen
+### 4. Configure Screen Capture
 
-## Error Handling
+Use mss to capture the livestream window on your screen.
 
-The API handles common errors:
+For dual-monitor setups, identify the correct monitor and coordinates:
 
-- Empty or whitespace-only input returns HTTP 400
-- Server errors return HTTP 500 with error details
-- Invalid JSON returns HTTP 422
+- Primary monitor: 1440x900 (left)
+- Extended monitor: 2560x1080 (right)
+- Livestream was on the right half of the extended monitor
 
-## License
+Use a test script to verify the capture area:
 
-This project is open source and available under the MIT License.
+```python
+import cv2
+from mss import mss
+import numpy as np
+
+sct = mss()
+monitor = {"top": 0, "left": 2780, "width": 320, "height": 320} # Adjust based on your setup
+while True:
+    screenshot = sct.grab(monitor)
+    frame = np.array(screenshot)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+    cv2.imshow("Test Capture", frame)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+cv2.destroyAllWindows()
+```
+
+Adjust the monitor coordinates until the livestream is fully captured in the test window.
+
+### 5. Run Object Detection
+
+You now have multiple options:
+
+**Option 1: Real-time YOLO Detection (Original)**
+```bash
+uv run python detect_live.py
+```
+
+**Option 2: Screenshot + Gemini Analysis + Text-to-Speech (New)**
+```bash
+uv run python workflow_with_speech.py
+```
+
+**Option 3: Test Screen Capture Area**
+```bash
+uv run python test_capture.py
+```
+
+### 6. Optimize Performance
+
+- Enable MPS (Metal Performance Shaders) for faster inference on the M1 GPU by adding `device='mps'` to the model inference
+- Implement frame skipping to process detection only every nth frame, improving FPS
+- Persist the last annotated frame to avoid visual glitching during skipped frames
+
+## Usage
+
+### Real-time YOLO Detection (Original)
+1. Start the livestream from the Meta Ray-Ban AI Glasses
+2. Run the detection script:
+
+```bash
+uv run python detect_live.py
+```
+
+3. A window will display the livestream with real-time object detection annotations
+4. Press 'q' to quit the detection window
+
+### AI Analysis with Text-to-Speech (New)
+1. Make sure the livestream is visible on your screen
+2. Run the complete workflow:
+
+```bash
+uv run python workflow_with_speech.py
+```
+
+3. The system will:
+   - Capture a screenshot of the livestream area
+   - Analyze it with Gemini AI using a comprehensive prompt
+   - Speak the analysis results aloud using macOS Alex voice
+
+### Test Screen Capture
+To verify your screen capture coordinates:
+
+```bash
+uv run python test_capture.py
+```
+
+## Technical Details
+
+- **Livestreaming**: The glasses livestream to Instagram, which is accessed via a browser on the Mac
+- **Screen Capture**: mss captures a specific region of the screen where the livestream is displayed
+- **Object Detection**: YOLOv8 Nano processes the captured frames for real-time detection
+- **Performance Optimizations**:
+  - MPS: Leverages the M1's GPU for faster inference
+  - Frame Skipping: Processes detection every nth frame to improve FPS
+  - Persistent Annotations: Displays the last detected frame during skipped frames to avoid visual glitching
+
+## Troubleshooting
+
+- **Livestream Video Not Displaying**: If the video doesn't appear in the browser, try disabling ad-blockers (e.g., Brave Shields) or switching to another browser
+- **Incorrect Screen Capture Coordinates**: For dual-monitor setups, ensure the monitor coordinates in the script match the livestream's location. Use the test capture script to verify
+- **Low FPS**: If performance is sluggish, increase the `frame_skip` value or reduce the capture resolution (e.g., from 320x320 to 224x224)
+- **Package Import Issues**: If imports freeze or fail, reinstall packages with uv or check for M1 compatibility
+
+## Future Improvements
+
+- **Custom Model Training**: Fine-tune YOLOv8 Nano on a dataset of Arduino components for specialized object detection
+- **Voice Commands**: Integrate speech recognition to enable hands-free interaction with the AI assistant
+- **Arduino Integration**: Connect the system to an Arduino board to provide real-time feedback based on detected components and board states
+- **Enhanced Voice Quality**: Explore other TTS options like ElevenLabs or Azure Speech for different voice options
+- **Real-time Analysis**: Combine YOLO detection with Gemini analysis for continuous AI assistance
