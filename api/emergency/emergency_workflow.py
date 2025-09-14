@@ -83,36 +83,49 @@ def send_emergency_sms(location_info, screenshot_path=None):
     except Exception as e:
         print(f"Failed to send SOS: {e}")
 
-def trigger_vapi_call(phone_number, message="Emergency detected! Please respond."):
-    """Trigger an outbound call via Vapi API"""
+def trigger_vapi_call(phone_number, message):
+    """Trigger an outbound call via Vapi API (official endpoint)"""
     vapi_api_key = os.getenv("VAPI_API_KEY")
-    vapi_agent_id = os.getenv("VAPI_AGENT_ID")
-    if not vapi_api_key or not vapi_agent_id:
-        print("Vapi credentials not set in environment variables")
+    vapi_phone_number_id = os.getenv("VAPI_PHONE_NUMBER_ID")
+    vapi_assistant_id = os.getenv("VAPI_AGENT_ID")
+
+    if not all([vapi_api_key, vapi_phone_number_id, vapi_assistant_id, phone_number]):
+        print("Missing Vapi configuration")
         return
 
-    url = "https://api.vapi.dev/calls"
+    url = "https://api.vapi.ai/call/phone"
     headers = {
         "Authorization": f"Bearer {vapi_api_key}",
         "Content-Type": "application/json"
     }
     payload = {
-        "agent": vapi_agent_id,
-        "phone": phone_number,
-        "payload": {
-            "type": "text",
-            "text": message
-        }
+        "phoneNumberId": vapi_phone_number_id,
+        "assistantId": vapi_assistant_id,
+        "type": "outboundPhoneCall",
+        "customer": {"number": phone_number, "name": "Emergency Contact"},
+        "maxDurationSeconds": 600,
+        "assistant": {"firstMessage": message}
     }
+
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code == 200:
-            print(f"Vapi call triggered to {phone_number}")
+            print(f"✅ Vapi call triggered to {phone_number}")
+            print(response.json())
         else:
-            print(f"Vapi call failed: {response.text}")
+            print(f"❌ Vapi call failed: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error triggering Vapi call: {e}")
+        print(f"⚠️ Error triggering Vapi call: {e}")
 
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if response.status_code == 200:
+            print(f"✅ Vapi call triggered to {phone_number}")
+            print(response.json())
+        else:
+            print(f"❌ Vapi call failed: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"⚠️ Error triggering Vapi call: {e}")
 
     '''
     log_file = f"emergency_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
