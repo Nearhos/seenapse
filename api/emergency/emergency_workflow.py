@@ -101,6 +101,36 @@ def send_emergency_sms(location_info, screenshot_path=None):
     except Exception as e:
         print(f"❌ Failed to send SOS: {e}")
 
+def trigger_vapi_call(phone_number, message="Emergency detected! Please respond."):
+    """Trigger an outbound call via Vapi API"""
+    vapi_api_key = os.getenv("VAPI_API_KEY")
+    vapi_agent_id = os.getenv("VAPI_AGENT_ID")
+    if not vapi_api_key or not vapi_agent_id:
+        print("❌ Vapi credentials not set in environment variables")
+        return
+
+    url = "https://api.vapi.dev/calls"
+    headers = {
+        "Authorization": f"Bearer {vapi_api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "agent": vapi_agent_id,
+        "phone": phone_number,
+        "payload": {
+            "type": "text",
+            "text": message
+        }
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if response.status_code == 200:
+            print(f"📞 Vapi call triggered to {phone_number}")
+        else:
+            print(f"❌ Vapi call failed: {response.text}")
+    except Exception as e:
+        print(f"❌ Error triggering Vapi call: {e}")
+
 def emergency_workflow():
     """Complete emergency workflow: screenshot + location + alerts + logging"""
     
@@ -127,6 +157,11 @@ def emergency_workflow():
     
     # Step 5: Send alerts with screenshot (currently just logging)
     send_emergency_sms(location_info, screenshot_path)
+
+    # Step 6: :Trigger Vapi call to emergency contact
+     # Step 5b: Trigger Vapi outbound call
+    vapi_phone_number = "+528110518779"
+    trigger_vapi_call(vapi_phone_number, message=location_message)
     
     # Step 6: Log everything to file for record keeping
     log_file = f"emergency_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"

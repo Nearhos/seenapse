@@ -13,10 +13,10 @@ import sys
 from datetime import datetime
 
 # Direct imports from root level
-from emergency_workflow import emergency_workflow
-from snapshot_workflow import snapshot_workflow
-from messaging_workflow import send_message_workflow
-from stress_relief_workflow import stress_relief_workflow
+from api.emergency.emergency_workflow import emergency_workflow
+from api.snapshot.snapshot_workflow import snapshot_workflow
+from api.emergency.messaging_workflow import send_message_workflow
+from api.stress.stress_relief_workflow import stress_relief_workflow
 from text_to_speech import speak_text
 
 # Workflow mappings for EEG signal integration
