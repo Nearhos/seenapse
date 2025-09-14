@@ -27,7 +27,6 @@ def capture_screenshot():
     screenshot = sct.grab(monitor)
     frame = np.array(screenshot)
     frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-    
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"screenshot_{timestamp}.jpg"
     
