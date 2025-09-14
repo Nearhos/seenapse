@@ -5,45 +5,38 @@ import cv2
 import numpy as np
 from mss import mss
 from dotenv import load_dotenv
-from text_to_speech import speak_text
 from twilio.rest import Client
 
-# Load environment variables
 load_dotenv()
 
 def capture_emergency_screenshot():
     """Capture screenshot at the moment of emergency for context"""
     try:
-        print("📸 Capturing emergency screenshot...")
+        print("Capturing emergency screenshot...")
         
-        # Use the same screen capture settings as your main system
         sct = mss()
         monitor = {"top": 140, "left": 25, "width": 400, "height": 600}
         
-        # Take screenshot
         screenshot = sct.grab(monitor)
         frame = np.array(screenshot)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
         
-        # Create emergency screenshot filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"emergency_screenshot_{timestamp}.jpg"
         
-        # Save the emergency screenshot
         cv2.imwrite(filename, frame)
-        print(f"📸 Emergency screenshot saved: {filename}")
+        print(f"Emergency screenshot saved: {filename}")
         
         return filename
-        
+    
     except Exception as e:
-        print(f"❌ Error capturing emergency screenshot: {e}")
+        print(f"Error capturing emergency screenshot: {e}")
         return None
 
 def get_location():
     """Get current location using IP-based geolocation"""
     try:
-        # IP-based geolocation (city-level, approximate)
-        token = os.getenv("IPINFO_TOKEN")  # Optional: set this for better rate limits
+        token = os.getenv("IPINFO_TOKEN")
         url = "https://ipinfo.io/json" + (f"?token={token}" if token else "")
         response = requests.get(url, timeout=4)
         j = response.json()
@@ -59,28 +52,18 @@ def get_location():
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     except Exception as e:
-        print(f"❌ Error getting location: {e}")
-        return {
-            "lat": 0,
-            "lon": 0,
-            "ip": "unknown",
-            "city": "unknown",
-            "region": "unknown", 
-            "country": "unknown",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+        print(f"Error getting location: {e}")
 
 def send_emergency_sms(location_info, screenshot_path=None):
     """Send SOS SMS with location and screenshot to emergency contact"""
     
-    # Get credentials from environment variables
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     from_number = os.getenv("TWILIO_PHONE_NUMBER")
     emergency_contact = os.getenv("EMERGENCY_CONTACT")
     
     if not all([account_sid, auth_token, from_number, emergency_contact]):
-        print("❌ Twilio credentials not set in environment variables")
+        print("Twilio credentials not set in environment variables")
         return
     
     client = Client(account_sid, auth_token)
@@ -88,25 +71,24 @@ def send_emergency_sms(location_info, screenshot_path=None):
     message_body = f"🚨 SOS ALERT 🚨\\nLocation: {location_info['lat']:.5f},{location_info['lon']:.5f}\\nCity: {location_info['city']}, {location_info['region']}, {location_info['country']}\\nTime: {location_info['timestamp']}\\nIP: {location_info['ip']}"
     
     try:
-        # Send message without screenshot attachment (file URLs don't work with Twilio)
         message = client.messages.create(
             body=message_body,
             from_=from_number,
             to=emergency_contact
         )
-        print(f"✅ SOS sent to {emergency_contact}")
+        print(f"SOS sent to {emergency_contact}")
         if screenshot_path and os.path.exists(screenshot_path):
-            print(f"📷 Screenshot saved locally: {screenshot_path}")
+            print(f"Screenshot saved locally: {screenshot_path}")
             
     except Exception as e:
-        print(f"❌ Failed to send SOS: {e}")
+        print(f"Failed to send SOS: {e}")
 
 def trigger_vapi_call(phone_number, message="Emergency detected! Please respond."):
     """Trigger an outbound call via Vapi API"""
     vapi_api_key = os.getenv("VAPI_API_KEY")
     vapi_agent_id = os.getenv("VAPI_AGENT_ID")
     if not vapi_api_key or not vapi_agent_id:
-        print("❌ Vapi credentials not set in environment variables")
+        print("Vapi credentials not set in environment variables")
         return
 
     url = "https://api.vapi.dev/calls"
@@ -125,45 +107,14 @@ def trigger_vapi_call(phone_number, message="Emergency detected! Please respond.
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         if response.status_code == 200:
-            print(f"📞 Vapi call triggered to {phone_number}")
+            print(f"Vapi call triggered to {phone_number}")
         else:
-            print(f"❌ Vapi call failed: {response.text}")
+            print(f"Vapi call failed: {response.text}")
     except Exception as e:
-        print(f"❌ Error triggering Vapi call: {e}")
+        print(f"Error triggering Vapi call: {e}")
 
-def emergency_workflow():
-    """Complete emergency workflow: screenshot + location + alerts + logging"""
-    
-    print("🚨 EMERGENCY WORKFLOW ACTIVATED 🚨")
-    
-    # Step 1: Immediately capture screenshot for context
-    screenshot_path = capture_emergency_screenshot()
-    
-    # Step 2: Get current location
-    print("📍 Getting location...")
-    location_info = get_location()
-    
-    # Step 3: Create emergency message
-    location_message = (
-        f"Emergency detected. "
-        f"Location: {location_info['city']}, {location_info['region']}, {location_info['country']}. "
-        f"Coordinates: {location_info['lat']:.5f}, {location_info['lon']:.5f}. "
-        f"Time: {location_info['timestamp']}"
-    )
-    
-    # Step 4: Speak emergency alert
-    print("🔊 Speaking emergency alert...")
-    speak_text("Emergency workflow activated. Capturing screenshot, getting your location and alerting emergency contact.")
-    
-    # Step 5: Send alerts with screenshot (currently just logging)
-    send_emergency_sms(location_info, screenshot_path)
 
-    # Step 6: :Trigger Vapi call to emergency contact
-     # Step 5b: Trigger Vapi outbound call
-    vapi_phone_number = "+528110518779"
-    trigger_vapi_call(vapi_phone_number, message=location_message)
-    
-    # Step 6: Log everything to file for record keeping
+    '''
     log_file = f"emergency_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
     with open(log_file, 'w') as f:
         f.write(f"EMERGENCY LOG\n")
@@ -173,16 +124,5 @@ def emergency_workflow():
         f.write(f"IP: {location_info['ip']}\n")
         f.write(f"Screenshot: {screenshot_path if screenshot_path else 'None captured'}\n")
         f.write(f"Emergency Contact: +16478668110\n")
-    
-    print(f"📝 Emergency logged to: {log_file}")
-    print("✅ Emergency workflow complete!")
-    
-    return {
-        "location": location_info,
-        "screenshot": screenshot_path,
-        "emergency_contact": "+16478668110",
-        "log_file": log_file
-    }
+    '''
 
-if __name__ == "__main__":
-    emergency_workflow()
