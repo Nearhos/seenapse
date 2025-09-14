@@ -25,33 +25,35 @@ system_prompt = (
     "- Image → 1–3 concise sentences (add a single 'Note: ...' line only if essential).\n\n"
     "Always take into consideration the profile and preferences of the person described in the knowledge base when answering, tailoring your response to their interests and expertise."
 )
-
-API_BASE = "http://ngrokurlhere"  # Replace with your FastAPI server address
-
-def fetch_jumping_jacks():
-    try:
-        resp = requests.get(f"{API_BASE}/latest/jumping_jacks", timeout=1)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        st.error(f"Error fetching jumping jacks: {e}")
-    return None
+data = None
+response = requests.get("https://bfe9d3f0313a.ngrok-free.app/latest/calm")
+if response.ok:
+    data = response.json()
+    st.write("Latest post:", data)
+        # ...
+else:
+    st.error("Fetch error")
 
 st.title("Snapshot Workflow")
 st.divider()
 
-#jumping_jacks = fetch_jumping_jacks()
-st.write("Jumping Jacks (snapshot):")
-image_path = capture_screenshot()
-st.image(image_path, caption="Snapshot Taken", use_container_width=True)
+if (data and len(data) > 0):
+    st.success("Executing snapshot workflow...")
 
-#store_image_embedding(image_path)
-st.write(f"Image embedding stored for {image_path}")
-#upload_csv_to_rag("api/knowledge_base.csv")
-st.write("CSV of knowledge base uploaded and embedded.")
-analysis = analyze_image_enhanced(image_path)
-rag_answer = answer_with_rag("what is on the image and how is it related to jocelyn" + system_prompt)
-st.write("RAG Answer:")
-st.write(rag_answer)
-speak_text(rag_answer)
-st.write("Spoken the RAG answer using TTS from Eleven Labs.")
+    st.title("Snapshot Workflow")
+    st.divider()
+
+    #jumping_jacks = fetch_jumping_jacks()
+    image_path = capture_screenshot()
+    st.image(image_path, caption="Snapshot Taken", use_container_width=True)
+
+    #store_image_embedding(image_path)
+    st.write(f"Image embedding stored for {image_path}")
+    #upload_csv_to_rag("api/knowledge_base.csv")
+    st.write("CSV of knowledge base uploaded and embedded.")
+    analysis = analyze_image_enhanced(image_path)
+    rag_answer = answer_with_rag("how is it related to jocelyn" + system_prompt)
+    st.write("RAG Answer:")
+    st.write(rag_answer)
+    speak_text(rag_answer)
+    st.write("Spoken the RAG answer using TTS from Eleven Labs.")

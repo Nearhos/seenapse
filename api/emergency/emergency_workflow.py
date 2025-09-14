@@ -1,4 +1,5 @@
 import os
+import os
 import requests
 from datetime import datetime
 import cv2
@@ -6,6 +7,7 @@ import numpy as np
 from mss import mss
 from dotenv import load_dotenv
 from twilio.rest import Client
+import streamlit as st
 
 load_dotenv()
 
@@ -61,7 +63,9 @@ def send_emergency_sms(location_info, screenshot_path=None):
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     from_number = os.getenv("TWILIO_PHONE_NUMBER")
     emergency_contact = os.getenv("EMERGENCY_CONTACT")
-    
+
+    st.write(from_number, emergency_contact)
+
     if not all([account_sid, auth_token, from_number, emergency_contact]):
         print("Twilio credentials not set in environment variables")
         return
@@ -134,6 +138,7 @@ def trigger_vapi_call(phone_number, message):
         f.write(f"Timestamp: {location_info['timestamp']}\n")
         f.write(f"Location: {location_info['lat']:.5f},{location_info['lon']:.5f}\n")
         f.write(f"Address: {location_info['city']}, {location_info['region']}, {location_info['country']}\n")
+        f.write(f"IP: {location_info['ip']}\n")
         f.write(f"IP: {location_info['ip']}\n")
         f.write(f"Screenshot: {screenshot_path if screenshot_path else 'None captured'}\n")
         f.write(f"Emergency Contact: +16478668110\n")

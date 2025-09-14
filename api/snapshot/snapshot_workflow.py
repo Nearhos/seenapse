@@ -75,4 +75,3 @@ def analyze_image_enhanced(image_path):
         }],
     )
     return resp.message.content[0].text.strip()
-

@@ -118,15 +118,7 @@ def answer_with_rag(prompt, top_n=2):
     ).embeddings.float[0]
 
     db = get_mongo()
-    image_docs = list(db["image_embeddings"].find({}))
     text_docs = list(db["text_embeddings"].find({}))
-
-    # Score images
-    image_scores = []
-    for doc in image_docs:
-        score = cosine_similarity(query_emb, doc["embedding"])
-        image_scores.append((score, doc))
-    image_scores.sort(reverse=True, key=lambda x: x[0])
 
     # Score texts
     text_scores = []
@@ -135,17 +127,13 @@ def answer_with_rag(prompt, top_n=2):
         text_scores.append((score, doc))
     text_scores.sort(reverse=True, key=lambda x: x[0])
 
-    # Get top N from each
-    top_images = [doc for _, doc in image_scores[:top_n]]
+    # Get top N
     top_texts = [doc for _, doc in text_scores[:top_n]]
 
     # Prepare context for Cohere
     context = []
     for doc in top_texts:
         context.append({"type": "text", "text": doc["text"]})
-    for doc in top_images:
-        base64_img = image_to_base64(doc["image_path"])
-        context.append({"type": "image_url", "image_url": {"url": base64_img}})
 
     # Generate answer
     response = co.chat(
